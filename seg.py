@@ -19,24 +19,47 @@ cv2.imwrite('gray.png', gray)
 blur = cv2.GaussianBlur(gray, (5,5), 2)
 cv2.imwrite('blur.png', blur)
 
-#canny = cv2.Canny(blur, 0, 256)
-canny = cv2.Canny(blur, 80, 150)
+canny = cv2.Canny(blur, 0, 256)
+#canny = cv2.Canny(blur, 80, 150)
 cv2.imwrite('canny.png', canny)
 
 ret, contours, hierarchy = cv2.findContours(canny, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-imageContours = np.zeros((img.shape[0], img.shape[0], 1), dtype = "uint8")
+
+imageContours = np.zeros(img.shape, np.uint8)
+marks = np.zeros(img.shape, np.uint8)
 
 for i in range(0,len(contours)):
+    cv2.drawContours(marks,contours,i,(i,0,0),1,8,hierarchy)
     cv2.drawContours(imageContours,contours,i,(255,0,0),1,8,hierarchy)
 
 cv2.imwrite('tmp.png', imageContours)
+cv2.imwrite('tmp1.png', marks)
 
-marks = cv2.watershed(img, imageContours)
-img[marks == -1] = [0,0,255]
-cv2.imwrite('maker.png', marks)
+#marks = cv2.watershed(img, marks)
+#img[marks == -1] = [0,0,255]
+#cv2.imwrite('maker.png', marks)
 
 dst = np.copy(img)
-cv2.drawContours(dst, contours, -1, (255,0,0), 1)
+
+w = img.shape[0]
+h = img.shape[1]
+c_max = []
+for i in range(len(contours)):
+    cnt = contours[i]
+    area = cv2.contourArea(cnt)
+
+    # 处理掉小的轮廓区域，这个区域的大小自己定义。
+    if(area < (h/10*w/10)):
+        c_min = []
+        c_min.append(cnt)
+        # thickness不为-1时，表示画轮廓线，thickness的值表示线的宽度。
+        cv2.drawContours(dst, c_min, -1, (255,0,0), thickness=1)
+        continue
+    #
+    c_max.append(cnt)
+
+cv2.drawContours(dst, c_max, -1, (255,0,0), 1)
+
 cv2.imwrite('dst.png', dst)
 
 ##thresh = np.ones_like(gray)
